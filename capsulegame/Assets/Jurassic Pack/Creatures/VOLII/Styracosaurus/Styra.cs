@@ -59,7 +59,7 @@ public class Styra : Creature
     //Set Y position
     if(isOnGround | isInWater | isOnWater)
     {
-      if(!isOnGround && !isInWater) { body.drag=1; body.angularDrag=1; } else { body.drag=4; body.angularDrag=4; }
+      if(!isOnGround && !isInWater) { body.linearDamping=1; body.angularDamping=1; } else { body.linearDamping=4; body.angularDamping=4; }
       ApplyYPos();
     } else ApplyGravity();
 		

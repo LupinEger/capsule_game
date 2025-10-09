@@ -62,17 +62,17 @@ public class Dimo : Creature
 		else { anm.SetBool("Attack", false); anm.SetInteger ("Move", 0); anm.SetInteger ("Idle", -1); }//Dead
 
     //Set Y position
-    if(isInWater && health>0) { body.drag=1; body.angularDrag=4; ApplyYPos(); anm.SetInteger ("Move", 1); }
+    if(isInWater && health>0) { body.linearDamping=1; body.angularDamping=4; ApplyYPos(); anm.SetInteger ("Move", 1); }
     else if(isOnGround)
     {
       roll=Mathf.Lerp(roll, 0.0f, 0.1f); pitch=Mathf.Lerp(pitch, 0.0f, 0.1f);
-      body.drag=4; body.angularDrag=4; ApplyYPos();
+      body.linearDamping=4; body.angularDamping=4; ApplyYPos();
     }
     else
 		{ 
-			if(health>0) { body.drag=1; body.angularDrag=1; } //in air
-			else if(isInWater) { body.drag=4; body.angularDrag=4; ApplyYPos(); }
-			else { body.drag=1; body.angularDrag=1; ApplyGravity(); }
+			if(health>0) { body.linearDamping=1; body.angularDamping=1; } //in air
+			else if(isInWater) { body.linearDamping=4; body.angularDamping=4; ApplyYPos(); }
+			else { body.linearDamping=1; body.angularDamping=1; ApplyGravity(); }
 		} 
 
 

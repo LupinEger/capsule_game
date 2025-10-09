@@ -60,7 +60,7 @@ public class Galli : Creature
     //Set Y position
     if(isOnGround | isInWater | isOnWater)
     {
-      if(!isOnGround && !isInWater) { body.drag=1; body.angularDrag=1; } else { body.drag=4; body.angularDrag=4; }
+      if(!isOnGround && !isInWater) { body.linearDamping=1; body.angularDamping=1; } else { body.linearDamping=4; body.angularDamping=4; }
       ApplyYPos(); anm.SetBool("OnGround", true);
       dir=new Vector3(transform.forward.x, 0, transform.forward.z);
     }
@@ -87,7 +87,7 @@ public class Galli : Creature
 			else if(OnAnm.IsName("Galli|IdleJumpEnd") | OnAnm.IsName("Galli|RunJumpEnd"))
 			{ 
         if(OnAnm.IsName("Galli|RunJumpEnd")) Move(dir, 160);
-        body.velocity=new Vector3(body.velocity.x, 0.0f, body.velocity.z); onJump=false;
+        body.linearVelocity=new Vector3(body.linearVelocity.x, 0.0f, body.linearVelocity.z); onJump=false;
 				PlaySound("Step", 3); PlaySound("Step", 4); 
 			}
       else if(!anm.GetInteger("Move").Equals(0)) Move(Vector3.Lerp(dir, Vector3.zero, 0.5f), 160);

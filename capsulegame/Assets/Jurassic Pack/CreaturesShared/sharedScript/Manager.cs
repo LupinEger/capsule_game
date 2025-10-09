@@ -161,7 +161,7 @@ public class Manager : MonoBehaviour
 		//Prevent camera from going into terrain
 		if(t && (t.SampleHeight(transform.root.position)+t.GetPosition().y)>transform.root.position.y-1.0f)
 		{
-			body.velocity=new Vector3(body.velocity.x, 0, body.velocity.z);
+			body.linearVelocity=new Vector3(body.linearVelocity.x, 0, body.linearVelocity.z);
 			transform.root.position=new Vector3(transform.root.position.x, (t.SampleHeight(transform.root.position)+t.GetPosition().y)+1.0f, transform.root.position.z);
 		}
 
@@ -171,12 +171,12 @@ public class Manager : MonoBehaviour
 		case 0:
 			if(source.clip==null) source.clip=windSnd; else if(source.clip==windSnd)
 			{
-				if(source.isPlaying) { source.volume=body.velocity.magnitude/128; source.pitch=source.volume; }
+				if(source.isPlaying) { source.volume=body.linearVelocity.magnitude/128; source.pitch=source.volume; }
 				else source.PlayOneShot(windSnd);
 			}
 
 			Vector3 dir; float y;
-			if(shift) body.mass=0.025f; else body.mass=0.1f; body.drag=1.0f;
+			if(shift) body.mass=0.025f; else body.mass=0.1f; body.linearDamping=1.0f;
 			if(Cursor.lockState==CursorLockMode.Locked | mouse2)
 			{
 				vx+=mouseX*sensivity; //rotate cam X axe
@@ -190,7 +190,7 @@ public class Manager : MonoBehaviour
 		break;
 		//Follow camera
 		case 1:
-			body.mass=1.0f; body.drag=10.0f; float size=creature.withersSize;
+			body.mass=1.0f; body.linearDamping=10.0f; float size=creature.withersSize;
 			if(Cursor.lockState==CursorLockMode.Locked | mouse2)
 			{
 				if(mouse1)

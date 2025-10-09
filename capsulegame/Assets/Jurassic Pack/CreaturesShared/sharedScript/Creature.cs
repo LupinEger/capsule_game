@@ -513,7 +513,7 @@ public class Creature:MonoBehaviour
 	#region PHYSICAL FORCES
 	public void ApplyGravity(float multiplier=1.0f)
 	{
-		body.AddForce((Vector3.up*size)*(body.velocity.y>0 ? -20*body.drag : -50*body.drag)*multiplier,ForceMode.Acceleration);
+		body.AddForce((Vector3.up*size)*(body.linearVelocity.y>0 ? -20*body.linearDamping : -50*body.linearDamping)*multiplier,ForceMode.Acceleration);
 	}
 	public void ApplyYPos()
 	{
@@ -535,9 +535,9 @@ public class Creature:MonoBehaviour
 			{
 				if(isInWater|isOnWater) force/=8;
 				else if(!canFly&&!onJump) force/=8;
-				else force/=(4/body.drag);
+				else force/=(4/body.linearDamping);
 			}
-			else force/=(4/body.drag);
+			else force/=(4/body.linearDamping);
 
 			body.AddForce(dir*force*speed,jump ? ForceMode.VelocityChange : ForceMode.Acceleration);
 		}
@@ -2083,7 +2083,7 @@ public class Creature:MonoBehaviour
 			anm.SetFloat("Pitch",(Vector3.Angle(Vector3.up,(body.worldCenterOfMass-posTGT).normalized)-90f)/-90f);
 			if(other)
 			{
-				body.velocity=other.body.velocity;
+				body.linearVelocity=other.body.linearVelocity;
 				body.MovePosition(Vector3.Lerp(transform.position,other.body.worldCenterOfMass+(transform.position-Head.GetChild(0).position)+transform.up,0.1f));
 			}
 			else body.MovePosition(Vector3.Lerp(transform.position,objTGT.transform.position+(transform.position-Head.GetChild(0).position)+transform.up,0.025f));
