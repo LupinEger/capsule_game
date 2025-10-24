@@ -102,7 +102,7 @@ public class VRControllerSetup : MonoBehaviour
                 Color.blue : Color.red;
 
             // ��������� ������������
-            handVisual.AddComponent<HandStabilizer>();
+            //handVisual.AddComponent<HandStabilizer>();
 
             // ������� ��������� ����� �� ����� ��������������
             DestroyImmediate(handVisual.GetComponent<BoxCollider>());
