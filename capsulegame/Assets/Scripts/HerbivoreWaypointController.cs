@@ -3,9 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-// РљР»Р°СЃСЃ РґР»СЏ РЅР°СЃС‚СЂРѕР№РєРё РєР°Р¶РґРѕР№ С‚РѕС‡РєРё
+// Класс для настройки каждой точки
 [System.Serializable]
-public class AnkyWaypoint
+public class HerbivoreWaypoint
 {
     public Transform point;
     public WaypointState state;
@@ -17,25 +17,26 @@ public class AnkyWaypoint
 
 public enum WaypointState
 {
-    Stand,      // РџСЂРѕСЃС‚Рѕ СЃС‚РѕСЏС‚СЊ
-    Eat,        // Р•СЃС‚СЊ
-    Sleep       // РЎРїР°С‚СЊ
+    Stand,      // Просто стоять
+    Eat,        // Есть
+    Sleep       // Спать
 }
 
 public enum MovementType
 {
-    Walk,       // РЁР°Рі
-    Run         // Р‘РµРі
+    Walk,       // Шаг
+    Run         // Бег
 }
 
-public class AnkyWaypointController : MonoBehaviour
+public class HerbivoreWaypointController : MonoBehaviour
 {
-    private Anky anky;
-    private Animator anim;
-    private Rigidbody body;
+    [Header("Dinosaur References")]
+    public MonoBehaviour dinosaurController; // Ссылка на основной контроллер динозавра (Anky, Arge и т.д.)
+    public Animator anim;
+    public Rigidbody body;
 
     [Header("Waypoint System")]
-    public List<AnkyWaypoint> waypoints = new List<AnkyWaypoint>();
+    public List<HerbivoreWaypoint> waypoints = new List<HerbivoreWaypoint>();
     public float arrivalDistance = 3f;
     public float turnSpeed = 2f;
 
@@ -50,35 +51,49 @@ public class AnkyWaypointController : MonoBehaviour
     public float maxMoveTime = 30f;
 
     [Header("Animation Settings")]
-    public int standAnimation = 0;    // РџСЂРѕСЃС‚Р°СЏ СЃС‚РѕР№РєР°
-    public int eatAnimation = 1;      // Р•РґР°
-    public int sleepAnimation = 6;    // РЎРѕРЅ
+    public int standAnimation = 0;    // Простая стойка
+    public int eatAnimation = 1;      // Еда
+    public int sleepAnimation = 6;    // Сон
+    public bool useRandomEatAnimations = false; // Использовать случайные анимации еды
+    public int maxEatAnimationVariants = 1; // Количество вариантов анимаций еды
+
+    [Header("Dinosaur Size Settings")]
+    public DinosaurSize size = DinosaurSize.Medium;
 
     [Header("Debug")]
     public bool showDebug = true;
+
+    public enum DinosaurSize
+    {
+        Small,   // Маленький динозавр (быстрый)
+        Medium,  // Средний динозавр
+        Large    // Крупный динозавр (медленный)
+    }
 
     private int currentWaypointIndex = -1;
     private bool isMoving = false;
     private bool isPerformingAction = false;
     private Coroutine behaviorCoroutine;
     private Coroutine movementCoroutine;
-    private List<AnkyWaypoint> sortedWaypoints = new List<AnkyWaypoint>();
+    private List<HerbivoreWaypoint> sortedWaypoints = new List<HerbivoreWaypoint>();
     private Vector3 currentTargetPosition;
 
-    // РџРµСЂРµРјРµРЅРЅС‹Рµ РґР»СЏ СѓРїСЂР°РІР»РµРЅРёСЏ Р°РЅРёРјР°С†РёСЏРјРё
+    // Переменные для управления анимациями
     private int currentMoveAnimation = 0;
     private int currentIdleAnimation = -1;
     private Coroutine animationTransitionCoroutine;
 
-    // РќРѕРІС‹Рµ РїР°СЂР°РјРµС‚СЂС‹ РґР»СЏ СѓР»СѓС‡С€РµРЅРЅРѕРіРѕ СѓРїСЂР°РІР»РµРЅРёСЏ Р°РЅРёРјР°С†РёСЏРјРё
+    // Параметры для управления анимациями
     private float animationTransitionTime = 0.3f;
     private bool isTransitioning = false;
 
     void Start()
     {
-        anky = GetComponent<Anky>();
-        anim = anky.anm;
-        body = anky.body;
+        // Автоматическое определение компонентов если не установлены в инспекторе
+        if (anim == null) anim = GetComponent<Animator>();
+        if (body == null) body = GetComponent<Rigidbody>();
+        if (dinosaurController == null)
+            dinosaurController = GetComponent<MonoBehaviour>();
 
         if (body == null)
         {
@@ -86,18 +101,67 @@ public class AnkyWaypointController : MonoBehaviour
             return;
         }
 
-        anky.useAI = false;
+        // Применяем настройки размера
+        ApplySizeSettings();
+
+        // Отключаем AI основного контроллера если это возможно
+        SetAIEnabled(false);
+
         body.WakeUp();
 
-        // РРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј Р°РЅРёРјР°С†РёРё РІ СЃРїРѕРєРѕР№РЅРѕРј СЃРѕСЃС‚РѕСЏРЅРёРё
+        // Инициализируем анимации в спокойном состоянии
         ResetToCalmState();
 
         InitializeWaypointSystem();
     }
 
+    void ApplySizeSettings()
+    {
+        switch (size)
+        {
+            case DinosaurSize.Small:
+                // Быстрые и резкие движения
+                arrivalDistance = Mathf.Min(arrivalDistance, 2f);
+                turnSpeed = Mathf.Max(turnSpeed, 3f);
+                walkSpeed = Mathf.Max(walkSpeed, 4f);
+                runSpeed = Mathf.Max(runSpeed, 8f);
+                acceleration = Mathf.Max(acceleration, 10f);
+                animationTransitionTime = 0.2f;
+                break;
+
+            case DinosaurSize.Medium:
+                // Стандартные настройки (оставляем как есть)
+                break;
+
+            case DinosaurSize.Large:
+                // Медленные и плавные движения
+                arrivalDistance = Mathf.Max(arrivalDistance, 5f);
+                turnSpeed = Mathf.Min(turnSpeed, 1.5f);
+                walkSpeed = Mathf.Min(walkSpeed, 2f);
+                runSpeed = Mathf.Min(runSpeed, 4f);
+                acceleration = Mathf.Min(acceleration, 6f);
+                animationTransitionTime = 0.4f;
+                maxMoveTime = 45f;
+                break;
+        }
+    }
+
+    void SetAIEnabled(bool enabled)
+    {
+        if (dinosaurController != null)
+        {
+            // Пытаемся отключить AI через рефлексию (универсальный способ)
+            var useAIField = dinosaurController.GetType().GetField("useAI");
+            if (useAIField != null && useAIField.FieldType == typeof(bool))
+            {
+                useAIField.SetValue(dinosaurController, enabled);
+            }
+        }
+    }
+
     void ResetToCalmState()
     {
-        // РџР»Р°РІРЅС‹Р№ СЃР±СЂРѕСЃ РІСЃРµС… Р°РЅРёРјР°С†РёР№ Рє СЃРїРѕРєРѕР№РЅРѕРјСѓ СЃРѕСЃС‚РѕСЏРЅРёСЋ
+        // Плавный сброс всех анимаций к спокойному состоянию
         if (animationTransitionCoroutine != null)
             StopCoroutine(animationTransitionCoroutine);
 
@@ -108,23 +172,23 @@ public class AnkyWaypointController : MonoBehaviour
     {
         isTransitioning = true;
 
-        // РЎРЅР°С‡Р°Р»Р° СЃР±СЂР°СЃС‹РІР°РµРј РґРІРёР¶РµРЅРёРµ
+        // Сначала сбрасываем движение
         anim.SetInteger("Move", 0);
         currentMoveAnimation = 0;
 
-        // Р–РґРµРј Р·Р°РІРµСЂС€РµРЅРёСЏ РїРµСЂРµС…РѕРґР°
+        // Ждем завершения перехода
         yield return new WaitForSeconds(animationTransitionTime);
 
-        // Р—Р°С‚РµРј СЃР±СЂР°СЃС‹РІР°РµРј idle
+        // Затем сбрасываем idle
         anim.SetInteger("Idle", -1);
         currentIdleAnimation = -1;
 
-        // РЈР±РµР¶РґР°РµРјСЃСЏ С‡С‚Рѕ РЅРµС‚ РґСЂСѓРіРёС… РїР°СЂР°РјРµС‚СЂРѕРІ
+        // Убеждаемся что нет других параметров
         anim.SetBool("Attack", false);
         anim.SetFloat("Speed", 0f);
         anim.SetFloat("Turn", 0f);
 
-        // РџСЂРёРЅСѓРґРёС‚РµР»СЊРЅРѕ РѕР±РЅРѕРІР»СЏРµРј Р°РЅРёРјР°С‚РѕСЂ
+        // Принудительно обновляем аниматор
         anim.Update(0.1f);
 
         isTransitioning = false;
@@ -135,7 +199,7 @@ public class AnkyWaypointController : MonoBehaviour
     {
         sortedWaypoints.Clear();
 
-        // Р¤РёР»СЊС‚СЂСѓРµРј С‚РѕР»СЊРєРѕ РІР°Р»РёРґРЅС‹Рµ С‚РѕС‡РєРё
+        // Фильтруем только валидные точки
         var validWaypoints = waypoints.Where(w => w.point != null).ToList();
 
         if (validWaypoints.Count == 0)
@@ -144,13 +208,13 @@ public class AnkyWaypointController : MonoBehaviour
             return;
         }
 
-        // РЎРѕСЂС‚РёСЂСѓРµРј С‚РѕС‡РєРё РїРѕ РїСЂРёРѕСЂРёС‚РµС‚Сѓ (РѕС‚ РјРµРЅСЊС€РµРіРѕ Рє Р±РѕР»СЊС€РµРјСѓ)
+        // Сортируем точки по приоритету (от меньшего к большему)
         var groupedByPriority = validWaypoints
             .GroupBy(w => w.priority)
-            .OrderBy(g => g.Key)  // РЎРѕСЂС‚РёСЂСѓРµРј РіСЂСѓРїРїС‹ РїРѕ РїСЂРёРѕСЂРёС‚РµС‚Сѓ
+            .OrderBy(g => g.Key)  // Сортируем группы по приоритету
             .ToList();
 
-        // Р”Р»СЏ РєР°Р¶РґРѕР№ РіСЂСѓРїРїС‹ РїСЂРёРѕСЂРёС‚РµС‚Р° РїРµСЂРµРјРµС€РёРІР°РµРј С‚РѕС‡РєРё СЃР»СѓС‡Р°Р№РЅС‹Рј РѕР±СЂР°Р·РѕРј
+        // Для каждой группы приоритета перемешиваем точки случайным образом
         foreach (var group in groupedByPriority)
         {
             var shuffledGroup = group.OrderBy(x => Random.value).ToList();
@@ -173,20 +237,20 @@ public class AnkyWaypointController : MonoBehaviour
 
     IEnumerator BehaviorLoop()
     {
-        // Р”Р°РµРј РІСЂРµРјСЏ РЅР° РёРЅРёС†РёР°Р»РёР·Р°С†РёСЋ
+        // Даем время на инициализацию
         yield return new WaitForSeconds(2f);
 
         int currentIndex = -1;
 
         while (sortedWaypoints.Count > 0)
         {
-            // Р’С‹Р±РёСЂР°РµРј СЃР»РµРґСѓСЋС‰СѓСЋ С‚РѕС‡РєСѓ РІ РѕС‚СЃРѕСЂС‚РёСЂРѕРІР°РЅРЅРѕРј СЃРїРёСЃРєРµ
+            // Выбираем следующую точку в отсортированном списке
             currentIndex = GetNextWaypointIndex(currentIndex);
             currentWaypointIndex = currentIndex;
 
             if (currentWaypointIndex == -1) break;
 
-            AnkyWaypoint targetWaypoint = sortedWaypoints[currentWaypointIndex];
+            HerbivoreWaypoint targetWaypoint = sortedWaypoints[currentWaypointIndex];
             currentTargetPosition = targetWaypoint.point.position;
 
             DebugLog($"Selected waypoint: {targetWaypoint.state} (Priority: {targetWaypoint.priority}) at {currentTargetPosition}");
@@ -195,7 +259,7 @@ public class AnkyWaypointController : MonoBehaviour
 
             if (currentWaypointIndex != -1)
             {
-                yield return StartCoroutine(PerformWaypointAction());
+                yield return StartCoroutine(PerformWaypointAction(targetWaypoint));
             }
 
             if (sortedWaypoints.Count > 1)
@@ -212,35 +276,35 @@ public class AnkyWaypointController : MonoBehaviour
     {
         if (sortedWaypoints.Count == 0) return -1;
 
-        // Р•СЃР»Рё СЌС‚Рѕ РїРµСЂРІР°СЏ С‚РѕС‡РєР° РёР»Рё РјС‹ РґРѕСЃС‚РёРіР»Рё РєРѕРЅС†Р° СЃРїРёСЃРєР°, РЅР°С‡РёРЅР°РµРј СЃ РЅР°С‡Р°Р»Р°
+        // Если это первая точка или мы достигли конца списка, начинаем с начала
         if (currentIndex == -1 || currentIndex >= sortedWaypoints.Count - 1)
         {
-            return 0; // Р’РѕР·РІСЂР°С‰Р°РµРјСЃСЏ Рє РїРµСЂРІРѕР№ С‚РѕС‡РєРµ
+            return 0; // Возвращаемся к первой точке
         }
 
-        // РРЅР°С‡Рµ РїРµСЂРµС…РѕРґРёРј Рє СЃР»РµРґСѓСЋС‰РµР№ С‚РѕС‡РєРµ
+        // Иначе переходим к следующей точке
         return currentIndex + 1;
     }
 
-    IEnumerator MoveToWaypoint(AnkyWaypoint waypoint)
+    IEnumerator MoveToWaypoint(HerbivoreWaypoint waypoint)
     {
-        // РџР›РђР’РќР«Р™ РџРћР’РћР РћРў Рљ Р¦Р•Р›Р РџР•Р Р•Р” РќРђР§РђР›РћРњ Р”Р’РР–Р•РќРРЇ
+        // ПЛАВНЫЙ ПОВОРОТ К ЦЕЛИ ПЕРЕД НАЧАЛОМ ДВИЖЕНИЯ
         yield return StartCoroutine(SmoothTurnToTarget());
 
-        // РџР›РђР’РќР«Р™ РџР•Р Р•РҐРћР” Рљ Р”Р’РР–Р•РќРР®
+        // ПЛАВНЫЙ ПЕРЕХОД К ДВИЖЕНИЮ
         yield return StartCoroutine(TransitionToMovement(waypoint.movementType));
 
-        // РЎРєРѕСЂРѕСЃС‚СЊ РґРІРёР¶РµРЅРёСЏ
+        // Скорость движения
         float targetSpeed = (waypoint.movementType == MovementType.Walk) ? walkSpeed : runSpeed;
 
         DebugLog($"Starting movement. Type: {waypoint.movementType}, Speed: {targetSpeed}");
 
-        // Р—Р°РїСѓСЃРєР°РµРј С„РёР·РёС‡РµСЃРєРѕРµ РґРІРёР¶РµРЅРёРµ
+        // Запускаем физическое движение
         if (movementCoroutine != null)
             StopCoroutine(movementCoroutine);
         movementCoroutine = StartCoroutine(MovementRoutine(targetSpeed));
 
-        // Р–РґРµРј РґРѕСЃС‚РёР¶РµРЅРёСЏ С†РµР»Рё
+        // Ждем достижения цели
         float moveTimer = 0f;
         bool reachedTarget = false;
 
@@ -259,7 +323,7 @@ public class AnkyWaypointController : MonoBehaviour
             yield return null;
         }
 
-        // РџР›РђР’РќР«Р™ РџР•Р Р•РҐРћР” Рљ РџРћРљРћР®
+        // ПЛАВНЫЙ ПЕРЕХОД К ПОКОЮ
         yield return StartCoroutine(TransitionToIdle());
 
         if (moveTimer >= maxMoveTime)
@@ -270,7 +334,7 @@ public class AnkyWaypointController : MonoBehaviour
         yield return new WaitForSeconds(0.3f);
     }
 
-    // РџР»Р°РІРЅС‹Р№ РїРѕРІРѕСЂРѕС‚ Рє С†РµР»Рё РїРµСЂРµРґ РЅР°С‡Р°Р»РѕРј РґРІРёР¶РµРЅРёСЏ
+    // Плавный поворот к цели перед началом движения
     IEnumerator SmoothTurnToTarget()
     {
         Vector3 directionToTarget = (currentTargetPosition - transform.position).normalized;
@@ -281,71 +345,78 @@ public class AnkyWaypointController : MonoBehaviour
             Quaternion targetRotation = Quaternion.LookRotation(directionToTarget);
             float angleDifference = Quaternion.Angle(transform.rotation, targetRotation);
 
-            // Р•СЃР»Рё СѓРіРѕР» РїРѕРІРѕСЂРѕС‚Р° Р·РЅР°С‡РёС‚РµР»СЊРЅС‹Р№, РґРµР»Р°РµРј РїР»Р°РІРЅС‹Р№ РїРѕРІРѕСЂРѕС‚
+            // Если угол поворота значительный, делаем плавный поворот
             if (angleDifference > 10f)
             {
-                DebugLog($"РџР»Р°РІРЅС‹Р№ РїРѕРІРѕСЂРѕС‚ РЅР° {angleDifference:F1} РіСЂР°РґСѓСЃРѕРІ");
+                DebugLog($"Плавный поворот на {angleDifference:F1} градусов");
 
-                // Р’РєР»СЋС‡Р°РµРј Р°РЅРёРјР°С†РёСЋ С…РѕРґСЊР±С‹ РґР»СЏ РїР»Р°РІРЅРѕРіРѕ РїРѕРІРѕСЂРѕС‚Р°
+                // Включаем анимацию ходьбы для плавного поворота
                 anim.SetInteger("Move", 1);
                 currentMoveAnimation = 1;
 
                 float turnProgress = 0f;
                 Quaternion startRotation = transform.rotation;
 
+                // Настраиваем скорость поворота в зависимости от размера
+                float turnMultiplier = size == DinosaurSize.Large ? 0.3f :
+                                     size == DinosaurSize.Small ? 0.7f : 0.5f;
+
                 while (turnProgress < 1f)
                 {
-                    turnProgress += Time.deltaTime * turnSpeed * 0.5f; // РњРµРґР»РµРЅРЅРµРµ РґР»СЏ РїР»Р°РІРЅРѕСЃС‚Рё
+                    turnProgress += Time.deltaTime * turnSpeed * turnMultiplier;
                     transform.rotation = Quaternion.Slerp(startRotation, targetRotation, turnProgress);
 
-                    // РђРЅРёРјР°С†РёСЏ РїРѕРІРѕСЂРѕС‚Р° РЅР° РјРµСЃС‚Рµ
-                    anim.SetFloat("Turn", Mathf.Clamp(angleDifference / 180f, -1f, 1f));
+                    // Анимация поворота на месте (только для средних и маленьких)
+                    if (size != DinosaurSize.Large)
+                    {
+                        anim.SetFloat("Turn", Mathf.Clamp(angleDifference / 180f, -1f, 1f));
+                    }
 
                     yield return null;
                 }
 
-                // РЎР±СЂР°СЃС‹РІР°РµРј Р°РЅРёРјР°С†РёСЋ РїРѕРІРѕСЂРѕС‚Р°
+                // Сбрасываем анимацию поворота
                 anim.SetFloat("Turn", 0f);
                 anim.SetInteger("Move", 0);
                 currentMoveAnimation = 0;
 
-                yield return new WaitForSeconds(0.2f);
+                yield return new WaitForSeconds(size == DinosaurSize.Large ? 0.3f : 0.2f);
             }
         }
     }
 
     IEnumerator TransitionToMovement(MovementType movementType)
     {
-        // Р–РґРµРј Р·Р°РІРµСЂС€РµРЅРёСЏ С‚РµРєСѓС‰РµРіРѕ РїРµСЂРµС…РѕРґР°
+        // Ждем завершения текущего перехода
         while (isTransitioning)
             yield return null;
 
         isTransitioning = true;
         isMoving = true;
 
-        // РћРїСЂРµРґРµР»СЏРµРј С†РµР»РµРІСѓСЋ Р°РЅРёРјР°С†РёСЋ РґРІРёР¶РµРЅРёСЏ
+        // Определяем целевую анимацию движения
         int targetMoveAnimation = (movementType == MovementType.Walk) ? 1 : 2;
 
-        // РЁР°Рі 1: РЎРЅР°С‡Р°Р»Р° СЃР±СЂР°СЃС‹РІР°РµРј idle Р°РЅРёРјР°С†РёСЋ РµСЃР»Рё РѕРЅР° Р°РєС‚РёРІРЅР°
+        // Шаг 1: Сначала сбрасываем idle анимацию если она активна
         if (currentIdleAnimation != -1)
         {
             anim.SetInteger("Idle", -1);
             currentIdleAnimation = -1;
 
-            // Р–РґРµРј РІС‹С…РѕРґР° РёР· idle СЃРѕСЃС‚РѕСЏРЅРёСЏ
+            // Ждем выхода из idle состояния
             yield return new WaitForSeconds(animationTransitionTime * 0.7f);
         }
 
-        // РЁР°Рі 2: РЈСЃС‚Р°РЅР°РІР»РёРІР°РµРј РґРІРёР¶РµРЅРёРµ СЃ РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅРѕР№ РїСЂРѕРІРµСЂРєРѕР№
+        // Шаг 2: Устанавливаем движение с дополнительной проверкой
         if (currentMoveAnimation != targetMoveAnimation)
         {
             anim.SetInteger("Move", targetMoveAnimation);
             currentMoveAnimation = targetMoveAnimation;
 
-            // Р–РґРµРј РїРѕРєР° Р°РЅРёРјР°С†РёСЏ СѓСЃС‚Р°РЅРѕРІРёС‚СЃСЏ
+            // Ждем пока анимация установится
             yield return new WaitForSeconds(animationTransitionTime);
 
-            // Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅР°СЏ РїСЂРѕРІРµСЂРєР° Рё РїСЂРёРЅСѓРґРёС‚РµР»СЊРЅРѕРµ РѕР±РЅРѕРІР»РµРЅРёРµ
+            // Дополнительная проверка и принудительное обновление
             if (anim.GetInteger("Move") != targetMoveAnimation)
             {
                 anim.SetInteger("Move", targetMoveAnimation);
@@ -358,13 +429,13 @@ public class AnkyWaypointController : MonoBehaviour
 
     IEnumerator TransitionToIdle()
     {
-        // Р–РґРµРј Р·Р°РІРµСЂС€РµРЅРёСЏ С‚РµРєСѓС‰РµРіРѕ РїРµСЂРµС…РѕРґР°
+        // Ждем завершения текущего перехода
         while (isTransitioning)
             yield return null;
 
         isTransitioning = true;
 
-        // РћСЃС‚Р°РЅР°РІР»РёРІР°РµРј С„РёР·РёС‡РµСЃРєРѕРµ РґРІРёР¶РµРЅРёРµ
+        // Останавливаем физическое движение
         if (movementCoroutine != null)
         {
             StopCoroutine(movementCoroutine);
@@ -373,16 +444,16 @@ public class AnkyWaypointController : MonoBehaviour
 
         body.linearVelocity = Vector3.zero;
 
-        // РџР»Р°РІРЅРѕ СЃР±СЂР°СЃС‹РІР°РµРј Р°РЅРёРјР°С†РёСЋ РґРІРёР¶РµРЅРёСЏ
+        // Плавно сбрасываем анимацию движения
         if (currentMoveAnimation != 0)
         {
             anim.SetInteger("Move", 0);
             currentMoveAnimation = 0;
 
-            // Р–РґРµРј Р·Р°РІРµСЂС€РµРЅРёСЏ РїРµСЂРµС…РѕРґР° Рє idle
+            // Ждем завершения перехода к idle
             yield return new WaitForSeconds(animationTransitionTime);
 
-            // РџСЂРёРЅСѓРґРёС‚РµР»СЊРЅРѕРµ РѕР±РЅРѕРІР»РµРЅРёРµ
+            // Принудительное обновление
             if (anim.GetInteger("Move") != 0)
             {
                 anim.SetInteger("Move", 0);
@@ -414,17 +485,16 @@ public class AnkyWaypointController : MonoBehaviour
         }
     }
 
-    IEnumerator PerformWaypointAction()
+    IEnumerator PerformWaypointAction(HerbivoreWaypoint waypoint)
     {
-        AnkyWaypoint waypoint = sortedWaypoints[currentWaypointIndex];
         isPerformingAction = true;
 
         DebugLog($"Performing action: {waypoint.state}");
 
-        // РџР›РђР’РќР«Р™ РџР•Р Р•РҐРћР” Рљ IDLE РђРќРРњРђР¦РР
+        // ПЛАВНЫЙ ПЕРЕХОД К IDLE АНИМАЦИИ
         yield return StartCoroutine(TransitionToSpecificIdle(waypoint.state));
 
-        // Р–РґРµРј СѓРєР°Р·Р°РЅРЅРѕРµ РІСЂРµРјСЏ
+        // Ждем указанное время
         float stayTime = Random.Range(waypoint.minStayTime, waypoint.maxStayTime);
         DebugLog($"Will stay for {stayTime:F1}s");
 
@@ -435,7 +505,7 @@ public class AnkyWaypointController : MonoBehaviour
             yield return null;
         }
 
-        // РџР»Р°РІРЅРѕ СЃР±СЂР°СЃС‹РІР°РµРј idle Р°РЅРёРјР°С†РёСЋ
+        // Плавно сбрасываем idle анимацию
         if (!isMoving)
         {
             anim.SetInteger("Idle", -1);
@@ -448,22 +518,16 @@ public class AnkyWaypointController : MonoBehaviour
 
     IEnumerator TransitionToSpecificIdle(WaypointState state)
     {
-        // Р–РґРµРј Р·Р°РІРµСЂС€РµРЅРёСЏ С‚РµРєСѓС‰РµРіРѕ РїРµСЂРµС…РѕРґР°
+        // Ждем завершения текущего перехода
         while (isTransitioning)
             yield return null;
 
         isTransitioning = true;
 
-        // РћРїСЂРµРґРµР»СЏРµРј С†РµР»РµРІСѓСЋ Р°РЅРёРјР°С†РёСЋ
-        int targetIdleAnimation = -1;
-        switch (state)
-        {
-            case WaypointState.Stand: targetIdleAnimation = standAnimation; break;
-            case WaypointState.Eat: targetIdleAnimation = eatAnimation; break;
-            case WaypointState.Sleep: targetIdleAnimation = sleepAnimation; break;
-        }
+        // Определяем целевую анимацию
+        int targetIdleAnimation = GetIdleAnimationForState(state);
 
-        // РЈР±РµР¶РґР°РµРјСЃСЏ С‡С‚Рѕ РґРІРёР¶РµРЅРёРµ СЃР±СЂРѕС€РµРЅРѕ
+        // Убеждаемся что движение сброшено
         if (currentMoveAnimation != 0)
         {
             anim.SetInteger("Move", 0);
@@ -471,22 +535,45 @@ public class AnkyWaypointController : MonoBehaviour
             yield return new WaitForSeconds(animationTransitionTime * 0.7f);
         }
 
-        // РЈСЃС‚Р°РЅР°РІР»РёРІР°РµРј idle Р°РЅРёРјР°С†РёСЋ
+        // Устанавливаем idle анимацию
         anim.SetInteger("Idle", targetIdleAnimation);
         currentIdleAnimation = targetIdleAnimation;
 
-        // Р–РґРµРј СѓСЃС‚Р°РЅРѕРІРєРё Р°РЅРёРјР°С†РёРё
+        // Ждем установки анимации
         yield return new WaitForSeconds(animationTransitionTime);
 
-        // РџСЂРёРЅСѓРґРёС‚РµР»СЊРЅРѕРµ РѕР±РЅРѕРІР»РµРЅРёРµ
+        // Принудительное обновление
         anim.Update(0.1f);
 
         isTransitioning = false;
     }
 
+    private int GetIdleAnimationForState(WaypointState state)
+    {
+        switch (state)
+        {
+            case WaypointState.Stand:
+                return standAnimation;
+
+            case WaypointState.Eat:
+                if (useRandomEatAnimations && maxEatAnimationVariants > 1)
+                {
+                    // Случайный выбор между различными анимациями еды
+                    return Random.Range(eatAnimation, eatAnimation + maxEatAnimationVariants);
+                }
+                return eatAnimation;
+
+            case WaypointState.Sleep:
+                return sleepAnimation;
+
+            default:
+                return standAnimation;
+        }
+    }
+
     void Update()
     {
-        // Р’РёР·СѓР°Р»СЊРЅР°СЏ РѕС‚Р»Р°РґРєР° РїСѓС‚Рё
+        // Визуальная отладка пути
         if (isMoving && currentWaypointIndex != -1)
         {
             Debug.DrawLine(transform.position, currentTargetPosition, Color.green);
@@ -497,7 +584,7 @@ public class AnkyWaypointController : MonoBehaviour
     {
         if (showDebug)
         {
-            Debug.Log($"[AnkyWaypoint] {message}");
+            Debug.Log($"[HerbivoreWaypoint] {message}");
         }
     }
 
@@ -505,7 +592,7 @@ public class AnkyWaypointController : MonoBehaviour
     {
         if (showDebug)
         {
-            Debug.LogWarning($"[AnkyWaypoint] {message}");
+            Debug.LogWarning($"[HerbivoreWaypoint] {message}");
         }
     }
 
@@ -534,11 +621,36 @@ public class AnkyWaypointController : MonoBehaviour
             animationTransitionCoroutine = null;
         }
 
-        // РџР»Р°РІРЅС‹Р№ СЃР±СЂРѕСЃ Рє СЃРїРѕРєРѕР№РЅРѕРјСѓ СЃРѕСЃС‚РѕСЏРЅРёСЋ
+        // Включаем обратно AI основного контроллера
+        SetAIEnabled(true);
+
+        // Плавный сброс к спокойному состоянию
         StartCoroutine(SmoothAnimationReset());
 
         body.linearVelocity = Vector3.zero;
         isMoving = false;
         isPerformingAction = false;
+    }
+
+    // Метод для добавления точек в runtime
+    public void AddWaypoint(HerbivoreWaypoint waypoint)
+    {
+        waypoints.Add(waypoint);
+        InitializeWaypointSystem();
+    }
+
+    // Метод для удаления точек в runtime
+    public void RemoveWaypoint(Transform pointTransform)
+    {
+        waypoints.RemoveAll(w => w.point == pointTransform);
+        InitializeWaypointSystem();
+    }
+
+    // Метод для очистки всех точек
+    public void ClearWaypoints()
+    {
+        waypoints.Clear();
+        sortedWaypoints.Clear();
+        StopPatrol();
     }
 }
