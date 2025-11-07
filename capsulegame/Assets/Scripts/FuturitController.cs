@@ -25,18 +25,7 @@ namespace Futurift
         [Header("Input Actions")]
         [SerializeField] private InputActionReference moveAction;
         [SerializeField] private InputActionReference rotateAction;
-        [SerializeField] private InputActionReference toggleHealthBarAction;
         [SerializeField] private Transform xrOrigin;
-        [Header("UI Settings")]
-        [SerializeField] private GameObject healthBarCanvas;
-        [Header("Audio Settings")]
-        [SerializeField] private AudioClip walkSound;
-        [SerializeField] private AudioClip rotateSound;
-        [SerializeField] private AudioSource walkAudioSource;
-        [SerializeField] private AudioSource rotateAudioSource;
-        [SerializeField] private float walkInterval = 0.5f;
-        [SerializeField] private float rotateVolume = 0.3f;
-        [SerializeField] private float fadeOutTime = 0.2f;
         [Header("Debug Settings")]
         [SerializeField] private bool enableDebugLogs = true;
 
@@ -108,11 +97,6 @@ namespace Futurift
             _controller?.Start();
             if (moveAction != null) moveAction.action.Enable();
             if (rotateAction != null) rotateAction.action.Enable();
-            if (toggleHealthBarAction != null)
-            {
-                toggleHealthBarAction.action.Enable();
-                toggleHealthBarAction.action.performed += OnToggleHealthBar;
-            }
         }
 
         private void OnDisable()
@@ -120,8 +104,6 @@ namespace Futurift
             _controller?.Stop();
             if (moveAction != null) moveAction.action.Disable();
             if (rotateAction != null) rotateAction.action.Disable();
-            StopWalkSound();
-            StopRotateSound();
         }
 
         private void Update()
@@ -147,8 +129,6 @@ namespace Futurift
             // 4. ПРИМЕНЕНИЕ ВРАЩЕНИЯ КАПСУЛЫ
             ApplyCapsuleRotation();
 
-            // Управление звуками
-            HandleMovementSounds(moveInput, rotateInput);
         }
 
         private void HandleCapsuleMovement(Vector2 moveInput)
@@ -222,11 +202,11 @@ namespace Futurift
                 }
             }
 
-            // Синхронизация XR Origin с капсулой
-            if (xrOrigin != null)
-            {
-                xrOrigin.rotation = transform.rotation;
-            }
+            //// Синхронизация XR Origin с капсулой
+            //if (xrOrigin != null)
+            //{
+            //    xrOrigin.rotation = transform.rotation;
+            //}
         }
 
         private void HandleCapsuleTilts(Vector2 moveInput, Vector2 rotateInput)
@@ -330,38 +310,6 @@ namespace Futurift
             return rotateAction.action.ReadValue<Vector2>();
         }
 
-        private void HandleMovementSounds(Vector2 moveInput, Vector2 rotateInput)
-        {
-            // Звуки ходьбы
-            if (moveInput.magnitude > 0.3f && walkSound != null)
-            {
-                if (!isWalking)
-                {
-                    isWalking = true;
-                    PlayWalkSound();
-                }
-            }
-            else if (isWalking)
-            {
-                isWalking = false;
-                StartCoroutine(FadeOutWalkSound());
-            }
-
-            // Звуки вращения
-            if (rotateInput.magnitude > 0.3f && rotateSound != null)
-            {
-                if (!isRotating)
-                {
-                    isRotating = true;
-                    PlayRotateSound();
-                }
-            }
-            else if (isRotating)
-            {
-                isRotating = false;
-                StartCoroutine(FadeOutRotateSound());
-            }
-        }
 
         [ContextMenu("Debug Log Current State")]
         public void DebugLogCurrentState()
@@ -431,80 +379,7 @@ namespace Futurift
             testStrafeLeft = false;
         }
 
-        // Звуковые методы
-        private void PlayWalkSound()
-        {
-            if (walkSound != null && !walkAudioSource.isPlaying)
-            {
-                walkAudioSource.clip = walkSound;
-                walkAudioSource.Play();
-                StartCoroutine(WaitForWalkInterval());
-            }
-        }
-
-        private IEnumerator WaitForWalkInterval()
-        {
-            yield return new WaitForSeconds(walkInterval);
-            if (isWalking) PlayWalkSound();
-        }
-
-        private void PlayRotateSound()
-        {
-            if (rotateSound != null && !rotateAudioSource.isPlaying)
-            {
-                rotateAudioSource.clip = rotateSound;
-                rotateAudioSource.volume = rotateVolume;
-                rotateAudioSource.Play();
-            }
-        }
-
-        private IEnumerator FadeOutWalkSound()
-        {
-            float startVolume = walkAudioSource.volume;
-            float elapsedTime = 0f;
-            while (elapsedTime < fadeOutTime && walkAudioSource.isPlaying)
-            {
-                elapsedTime += Time.deltaTime;
-                walkAudioSource.volume = Mathf.Lerp(startVolume, 0f, elapsedTime / fadeOutTime);
-                yield return null;
-            }
-            walkAudioSource.Stop();
-            walkAudioSource.volume = startVolume;
-        }
-
-        private IEnumerator FadeOutRotateSound()
-        {
-            float startVolume = rotateAudioSource.volume;
-            float elapsedTime = 0f;
-            while (elapsedTime < fadeOutTime && rotateAudioSource.isPlaying)
-            {
-                elapsedTime += Time.deltaTime;
-                rotateAudioSource.volume = Mathf.Lerp(startVolume, 0f, elapsedTime / fadeOutTime);
-                yield return null;
-            }
-            rotateAudioSource.Stop();
-            rotateAudioSource.volume = startVolume;
-        }
-
-        private void StopWalkSound()
-        {
-            if (walkAudioSource.isPlaying) StartCoroutine(FadeOutWalkSound());
-        }
-
-        private void StopRotateSound()
-        {
-            if (rotateAudioSource.isPlaying) StartCoroutine(FadeOutRotateSound());
-        }
-
-        private void OnToggleHealthBar(InputAction.CallbackContext context)
-        {
-            if (healthBarCanvas != null)
-            {
-                healthBarCanvas.SetActive(!healthBarCanvas.activeSelf);
-            }
-        }
-
-        private void OnPlayerDeath()
+        public void OnPlayerDeath()
         {
             _controller.Pitch = 0f;
             _controller.Roll = 0f;

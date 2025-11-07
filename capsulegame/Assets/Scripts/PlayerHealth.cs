@@ -1,3 +1,4 @@
+using Futurift;
 using UnityEngine;
 
 public class PlayerHealth : MonoBehaviour
@@ -41,6 +42,8 @@ public class PlayerHealth : MonoBehaviour
     void Die()
     {
         isDead = true;
+        //SimpleController controller = new SimpleController();
+        //controller.OnPlayerDeath();
         currentHealth = 0;
         Debug.Log("PLAYER DIED!");
 
