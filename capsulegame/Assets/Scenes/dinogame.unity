@@ -2022,6 +2022,10 @@ PrefabInstance:
       value: XR Device Simulator
       objectReference: {fileID: 0}
     - target: {fileID: 6598815579406187037, guid: 18ddb545287c546e19cc77dc9fbb2189, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6598815579406187037, guid: 18ddb545287c546e19cc77dc9fbb2189, type: 3}
       propertyPath: m_TagString
       value: Player
       objectReference: {fileID: 0}
@@ -2139,6 +2143,10 @@ PrefabInstance:
     - target: {fileID: 441488, guid: 3b8f87d65dad680439bf99455d68d060, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5483302, guid: 3b8f87d65dad680439bf99455d68d060, type: 3}
+      propertyPath: m_Constraints
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 11487190, guid: 3b8f87d65dad680439bf99455d68d060, type: 3}
       propertyPath: m_Enabled
@@ -4645,6 +4653,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 972819242}
+  - component: {fileID: 972819243}
   m_Layer: 0
   m_Name: T-Rex fences (1)
   m_TagString: Untagged
@@ -4698,6 +4707,33 @@ Transform:
   - {fileID: 1041946892}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 124.955, z: 0}
+--- !u!54 &972819243
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 972819241}
+  serializedVersion: 4
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1001 &977925605
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4996,6 +5032,10 @@ PrefabInstance:
     - target: {fileID: 492492, guid: 303902ed488a1cb40ae0f9afef7c25e7, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5465806, guid: 303902ed488a1cb40ae0f9afef7c25e7, type: 3}
+      propertyPath: m_Constraints
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 9523470, guid: 303902ed488a1cb40ae0f9afef7c25e7, type: 3}
       propertyPath: m_Enabled
@@ -5628,6 +5668,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1116269627}
   - component: {fileID: 1116269626}
+  - component: {fileID: 1116269628}
   m_Layer: 0
   m_Name: NavMeshSetup
   m_TagString: Untagged
@@ -5682,6 +5723,38 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1116269628
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1116269625}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a5ac11cc976e418e8d13136b07e1f52, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_SerializedVersion: 0
+  m_AgentTypeID: -334000983
+  m_CollectObjects: 3
+  m_Size: {x: 10, y: 10, z: 10}
+  m_Center: {x: 0, y: 2, z: 0}
+  m_LayerMask:
+    serializedVersion: 2
+    m_Bits: 33
+  m_UseGeometry: 1
+  m_DefaultArea: 0
+  m_GenerateLinks: 0
+  m_IgnoreNavMeshAgent: 1
+  m_IgnoreNavMeshObstacle: 1
+  m_OverrideTileSize: 0
+  m_TileSize: 256
+  m_OverrideVoxelSize: 0
+  m_VoxelSize: 0.33333334
+  m_MinRegionArea: 2
+  m_NavMeshData: {fileID: 23800000, guid: 45a5c5e3ff2d8d442b60285e307f4954, type: 2}
+  m_BuildHeightMesh: 0
 --- !u!1 &1125597517 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8164078558771037576, guid: ef8176f4f39a32f4db9a85ac59028fe5, type: 3}
@@ -7255,6 +7328,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 156200, guid: 07f502d91b44df14ebea9bda19da782e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1613263717}
+    - targetCorrespondingSourceObject: {fileID: 156200, guid: 07f502d91b44df14ebea9bda19da782e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1613263719}
   m_SourcePrefab: {fileID: 100100000, guid: 07f502d91b44df14ebea9bda19da782e, type: 3}
 --- !u!1 &1299200016
 GameObject:
@@ -9062,7 +9138,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1613263686}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a5c77e57d3e63384a953d1cd2c4a0519, type: 3}
   m_Name: 
@@ -9136,6 +9212,37 @@ MonoBehaviour:
   tactPatternId: touch
   durationMillis: 500
   intensity: 1
+--- !u!114 &1613263719
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1613263686}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 52bef5973bb42bc49ac35de9ddad5c66, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  player: {fileID: 131665051}
+  animator: {fileID: 1613263700}
+  detectionRange: 60
+  attackRange: 20
+  chaseSpeed: 8
+  walkSpeed: 6
+  wanderRadius: 30
+  minWanderDistance: 20
+  wanderInterval: 5
+  attackDamage: 75
+  attackCooldown: 0
+  attackWindupTime: 0.5
+  attackDuration: 1
+  moveParameter: Move
+  attackTrigger: Attack
+  idleState: 0
+  walkState: 1
+  runState: 2
+  attackState: 3
 --- !u!1 &1617496663 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8164078558771037576, guid: ef8176f4f39a32f4db9a85ac59028fe5, type: 3}
@@ -11607,6 +11714,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 779442492565933295, guid: af03bd2a5f214ab4c895585b3dd6bdf3, type: 3}
+      propertyPath: m_Constraints
+      value: 4
+      objectReference: {fileID: 0}
     - target: {fileID: 7623594727434991732, guid: af03bd2a5f214ab4c895585b3dd6bdf3, type: 3}
       propertyPath: useAI
       value: 0
