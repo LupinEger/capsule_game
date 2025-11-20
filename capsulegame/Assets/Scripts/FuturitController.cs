@@ -8,7 +8,7 @@ using TMPro;
 
 namespace Futurift
 {
-    public class SimpleController : MonoBehaviour
+    public class FuturiftController : MonoBehaviour
     {
         [SerializeField] private string ipAddress = "127.0.0.1";
         [SerializeField] private int port = 6065;
@@ -66,12 +66,12 @@ namespace Futurift
             };
             _controller = new FutuRiftController(new UdpPortSender(udpOptions));
 
-            // Убираем Rigidbody если он есть
-            Rigidbody rb = GetComponent<Rigidbody>();
-            if (rb != null)
-            {
-                Destroy(rb);
-            }
+            //// Убираем Rigidbody если он есть
+            //Rigidbody rb = GetComponent<Rigidbody>();
+            //if (rb != null)
+            //{
+            //    Destroy(rb);
+            //}
 
             // Находим камеру
             if (cameraTransform == null)
@@ -186,27 +186,20 @@ namespace Futurift
 
         private void HandleRotation(Vector2 rotateInput)
         {
-            // ПРАВЫЙ СТИК: поворот КАПСУЛЫ И КАМЕРЫ вместе
-            if (rotateInput.magnitude > 0.1f)
+            if (Mathf.Abs(rotateInput.x) > 0.1f && xrOrigin != null)
             {
-                // Поворот капсулы и камеры по горизонтали
+                // БЫЛО: float rotationAmount = rotateInput.x * rotationSpeed * Time.deltaTime;
+                // СТАЛО: меняем знак для правильного направления
                 float rotationAmount = rotateInput.x * cameraRotationSpeed * Time.deltaTime;
-                transform.Rotate(0f, rotationAmount, 0f);
-
-                // Синхронизация камеры с капсулой
-                if (cameraTransform != null)
+        
+                // Поворачиваем всю XR Origin
+                xrOrigin.Rotate(0f, rotationAmount, 0f);
+        
+                if (enableDebugLogs && Mathf.Abs(rotateInput.x) > 0.5f)
                 {
-                    // Камера следует за поворотом капсулы, но сохраняет свой локальный pitch
-                    Vector3 currentCameraEuler = cameraTransform.eulerAngles;
-                    cameraTransform.rotation = Quaternion.Euler(currentCameraEuler.x, transform.eulerAngles.y, currentCameraEuler.z);
+                    Debug.Log($"[Rotation] Input: {rotateInput.x:F2}, Amount: {rotationAmount:F2}°");
                 }
             }
-
-            //// Синхронизация XR Origin с капсулой
-            //if (xrOrigin != null)
-            //{
-            //    xrOrigin.rotation = transform.rotation;
-            //}
         }
 
         private void HandleCapsuleTilts(Vector2 moveInput, Vector2 rotateInput)
@@ -237,11 +230,12 @@ namespace Futurift
                 desiredTiltRoll = -moveInput.x * maxRoll * 0.8f * Mathf.Clamp01(Mathf.Abs(moveInput.x));
             }
 
-            // 3. КРЕН ОТ ПОВОРОТА (правый стик)
+            // 3. КРЕН ОТ ПОВОРОТА (правильное направление)
             if (isRotating)
             {
-                // Крен при повороте капсулы влево/вправо
-                desiredTiltRoll += -rotateInput.x * maxRoll * Mathf.Clamp01(Mathf.Abs(rotateInput.x));
+                // БЫЛО: desiredTiltRoll += rotateInput.x * maxRoll * 0.6f;
+                // СТАЛО: меняем знак для согласованности
+                desiredTiltRoll += rotateInput.x * maxRoll * 0.6f;
             }
 
             // ПРИМЕНЕНИЕ НАКЛОНОВ
@@ -383,6 +377,12 @@ namespace Futurift
         {
             _controller.Pitch = 0f;
             _controller.Roll = 0f;
+            this.enabled = false;
+        }
+
+        public void Respawn()
+        {
+            this.enabled = true; // включаем обратно
         }
     }
 }

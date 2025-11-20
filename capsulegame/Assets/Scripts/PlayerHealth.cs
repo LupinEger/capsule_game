@@ -3,20 +3,37 @@ using UnityEngine;
 
 public class PlayerHealth : MonoBehaviour
 {
+    [SerializeField] private FuturiftController playerController;
+
     [Header("Health Settings")]
     public float maxHealth = 100f;
     public float currentHealth;
 
     [Header("Death Settings")]
-    public GameObject deathUI; // Перетащите сюда UI объект для смерти
+    public GameObject deathUI;
+
+    [Header("Respawn Settings")]
+    public Transform respawnPoint; // Перетащи сюда точку респавна
 
     private bool isDead = false;
+    private Vector3 initialPosition;
+    private Quaternion initialRotation;
 
     void Start()
     {
         currentHealth = maxHealth;
 
-        // Скрываем UI смерти при старте
+        // Сохраняем начальную позицию и вращение
+        initialPosition = transform.position;
+        initialRotation = transform.rotation;
+
+        // Если назначена точка респавна, используем её
+        if (respawnPoint != null)
+        {
+            initialPosition = respawnPoint.position;
+            initialRotation = respawnPoint.rotation;
+        }
+
         if (deathUI != null)
             deathUI.SetActive(false);
         else
@@ -32,7 +49,6 @@ public class PlayerHealth : MonoBehaviour
         currentHealth -= damage;
         Debug.Log("Player takes " + damage + " damage! Health: " + currentHealth + "/" + maxHealth);
 
-        // Проверка смерти
         if (currentHealth <= 0)
         {
             Die();
@@ -42,8 +58,6 @@ public class PlayerHealth : MonoBehaviour
     void Die()
     {
         isDead = true;
-        //SimpleController controller = new SimpleController();
-        //controller.OnPlayerDeath();
         currentHealth = 0;
         Debug.Log("PLAYER DIED!");
 
@@ -54,13 +68,21 @@ public class PlayerHealth : MonoBehaviour
         if (deathUI != null)
             deathUI.SetActive(true);
 
-        // Можно добавить звук смерти или другие эффекты
+        if (playerController != null)
+        {
+            playerController.OnPlayerDeath();
+        }
     }
 
-    // Метод для возрождения из UI
+    // Метод для возрождения из UI (вызывается кнопкой)
     public void Respawn()
     {
         Debug.Log("RESPAWNING PLAYER...");
+
+        // Телепортируем игрока на точку респавна
+        transform.position = initialPosition;
+        transform.rotation = initialRotation;
+        Debug.Log("Player teleported to: " + initialPosition);
 
         // Восстанавливаем время
         Time.timeScale = 1f;
@@ -73,7 +95,23 @@ public class PlayerHealth : MonoBehaviour
         currentHealth = maxHealth;
         isDead = false;
 
+        if (playerController != null)
+        {
+            // Включаем управление обратно
+            playerController.enabled = true;
+            Debug.Log("Player controller re-enabled");
+        }
+
         Debug.Log("Player respawned! Health: " + currentHealth + "/" + maxHealth);
+    }
+
+    // Для смены точки респавна во время игры
+    public void SetRespawnPoint(Transform newRespawnPoint)
+    {
+        respawnPoint = newRespawnPoint;
+        initialPosition = newRespawnPoint.position;
+        initialRotation = newRespawnPoint.rotation;
+        Debug.Log("New respawn point set: " + initialPosition);
     }
 
     public void Heal(float healAmount)

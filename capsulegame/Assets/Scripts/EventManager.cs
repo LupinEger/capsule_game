@@ -1,13 +1,20 @@
 using System;
+using UnityEngine;
 
 public static class EventManager
 {
-    // Определяем делегат и событие
-    public static Action<string, float, float> OnDinosaurTouched;
+    // События для левой и правой руки
+    public static Action<string, float, float> OnDinosaurTouchedLeft;
+    public static Action<string, float, float> OnDinosaurTouchedRight;
 
-    // Метод для вызова события
-    public static void InvokeOnDinosaurTouched(string patternId, float intensity, float durationMillis)
+    // Методы для вызова событий
+    public static void InvokeOnDinosaurTouchedLeft(string patternId, float intensity, float durationMillis)
     {
-        OnDinosaurTouched?.Invoke(patternId, intensity, durationMillis);
+        OnDinosaurTouchedLeft?.Invoke(patternId, intensity, durationMillis);
+    }
+
+    public static void InvokeOnDinosaurTouchedRight(string patternId, float intensity, float durationMillis)
+    {
+        OnDinosaurTouchedRight?.Invoke(patternId, intensity, durationMillis);
     }
 }

@@ -17,6 +17,8 @@ namespace Bhaptics.SDK2
     public class BhapticsEvent
     {
         
-        public const string TOUCH = "touch";
+        public const string TOUCH_RIGHT = "touch_right";
+        
+        public const string TOUCH_LEFT = "touch_left";
     }
 }

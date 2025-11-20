@@ -1,31 +1,36 @@
 using UnityEngine;
-using Bhaptics.SDK2; // Не забудьте добавить пространство имен bhaptics
+using Bhaptics.SDK2;
 
-namespace Bhaptics.SDK2
-{
-    using System;
-    using UnityEngine;
-
-    public class BhapticsEvents
-    {
-        public const string touch = "touch";
-    }
-}
 public class XRTactilePlayer : MonoBehaviour
 {
     [Header("Bhaptics Gloves")]
     [SerializeField] private bool isGlovesEnabled = true;
+    [SerializeField] private string handEventId; // Добавляем поле для ID руки
 
     void OnEnable()
     {
-        // Подписываемся на событие
-        EventManager.OnDinosaurTouched += PlayTactileFeedback;
+        // Подписываемся на событие в зависимости от тега объекта
+        if (gameObject.CompareTag("LeftHand"))
+        {
+            EventManager.OnDinosaurTouchedLeft += PlayTactileFeedback;
+        }
+        else if (gameObject.CompareTag("RightHand"))
+        {
+            EventManager.OnDinosaurTouchedRight += PlayTactileFeedback;
+        }
     }
 
     void OnDisable()
     {
         // Отписываемся от события
-        EventManager.OnDinosaurTouched -= PlayTactileFeedback;
+        if (gameObject.CompareTag("LeftHand"))
+        {
+            EventManager.OnDinosaurTouchedLeft -= PlayTactileFeedback;
+        }
+        else if (gameObject.CompareTag("RightHand"))
+        {
+            EventManager.OnDinosaurTouchedRight -= PlayTactileFeedback;
+        }
     }
 
     // Основной метод для воспроизведения тактильной обратной связи
@@ -36,7 +41,7 @@ public class XRTactilePlayer : MonoBehaviour
             return;
         }
 
-        BhapticsLibrary.Play(eventId: BhapticsEvents.touch, duration: 1);
-        BhapticsLibrary.Play(eventId: BhapticsEvents.touch, duration: 1);
+        // Ваш изначальный код - просто меняем eventId на handEventId
+        BhapticsLibrary.Play(eventId: handEventId, duration: 1);
     }
 }
